@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 from functools import wraps
 
+from config import AUTH, CONFIG;
 AUTH = {
         'host': {
             'username': 'admin',
