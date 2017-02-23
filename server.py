@@ -2,16 +2,6 @@ from flask import Flask, request, Response
 from functools import wraps
 
 from config import AUTH, CONFIG;
-AUTH = {
-        'host': {
-            'username': 'admin',
-            'password': 'secret'
-            }
-        }
-
-CONFIG = {
-        'NSS_PATH': 'nss/'
-        }
 
 def check_auth(hostname, username, password):
     """This function is called to check if a username /
