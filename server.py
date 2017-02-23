@@ -39,11 +39,15 @@ def requires_auth(f):
 
 app = Flask(__name__)
 
-@app.route("/<hostname>")
+@app.route("/<hostname>", methods=['GET', 'PUT'])
 @requires_auth
 def hello(hostname):
-    ip = get_ip(hostname)
-    return "Hello "+ip
+    if request.method == 'GET':
+        ip = get_ip(hostname)
+        return "Hello "+ip
+    elif request.method == 'PUT':
+        return "Hello "+request.remote_addr
+
 
 def get_ip(hostname):
     with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as content_file:
