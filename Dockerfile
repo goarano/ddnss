@@ -1,2 +1,3 @@
 FROM python:3-onbuild
-CMD [ "python", "./your-daemon-or-script.py" ]
+EXPOSE 5000
+CMD [ "python", "./server.py" ]
