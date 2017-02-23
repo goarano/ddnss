@@ -41,7 +41,7 @@ app = Flask(__name__)
 
 @app.route("/<hostname>", methods=['GET', 'PUT'])
 @requires_auth
-def hello(hostname):
+def endpoint(hostname):
     if request.method == 'GET':
         ip = get_ip(hostname)
         return "read " + ip
@@ -49,6 +49,13 @@ def hello(hostname):
         ip = request.remote_addr
         write_ip(hostname, ip)
         return "wrote " + ip
+
+@app.route("/<hostname>/PUT")
+@requires_auth
+def endpoint_put(hostname):
+    ip = request.remote_addr
+    write_ip(hostname, ip)
+    return "wrote " + ip
 
 def get_ip(hostname):
     with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as host_file:
