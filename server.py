@@ -44,16 +44,21 @@ app = Flask(__name__)
 def hello(hostname):
     if request.method == 'GET':
         ip = get_ip(hostname)
-        return "Hello "+ip
+        return "read " + ip
     elif request.method == 'PUT':
-        return "Hello "+request.remote_addr
-
+        ip = request.remote_addr
+        write_ip(hostname, ip)
+        return "wrote " + ip
 
 def get_ip(hostname):
-    with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as content_file:
-        ip = content_file.read()
+    with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as host_file:
+        ip = host_file.read()
     ip = ip.strip()
     return ip
+
+def write_ip(hostname, ip):
+    with open(CONFIG['NSS_PATH']+'/'+hostname, 'w') as host_file:
+        ip = host_file.write(ip)
 
 if __name__ == "__main__":
     app.run()
