@@ -8,6 +8,10 @@ AUTH = {
             }
         }
 
+CONFIG = {
+        'NSS_PATH': 'nss/'
+        }
+
 def check_auth(hostname, username, password):
     """This function is called to check if a username /
     password combination is valid.
@@ -15,7 +19,6 @@ def check_auth(hostname, username, password):
     auth = AUTH.get(hostname)
     if auth == None:
         return False
-    print(auth.get('username'), auth.get('password'))
     return auth.get('username') == username and auth.get('password') == password
 
 def authenticate():
@@ -28,7 +31,6 @@ def authenticate():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print(kwargs.get('hostname'))
         auth = request.authorization
         if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password):
             return authenticate()
@@ -40,7 +42,14 @@ app = Flask(__name__)
 @app.route("/<hostname>")
 @requires_auth
 def hello(hostname):
-    return "Hello World!"
+    ip = get_ip(hostname)
+    return "Hello "+ip
+
+def get_ip(hostname):
+    with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as content_file:
+        ip = content_file.read()
+    ip = ip.strip()
+    return ip
 
 if __name__ == "__main__":
     app.run()
