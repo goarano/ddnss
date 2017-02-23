@@ -1,11 +1,6 @@
 from flask import Flask, request, Response
 from functools import wraps
 
-app = Flask(__name__)
-
-@app.route("/")
-def hello():
-    return "Hello World!"
 
 def check_auth(username, password):
     """This function is called to check if a username /
@@ -28,6 +23,13 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+app = Flask(__name__)
+
+@app.route("/")
+@requires_auth
+def hello():
+    return "Hello World!"
 
 if __name__ == "__main__":
     app.run()
