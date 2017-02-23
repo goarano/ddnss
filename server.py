@@ -1,12 +1,22 @@
 from flask import Flask, request, Response
 from functools import wraps
 
+AUTH = {
+        'host': {
+            'username': 'admin',
+            'password': 'secret'
+            }
+        }
 
-def check_auth(username, password):
+def check_auth(hostname, username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    return username == 'admin' and password == 'secret'
+    auth = AUTH.get(hostname)
+    if auth == None:
+        return False
+    print(auth.get('username'), auth.get('password'))
+    return auth.get('username') == username and auth.get('password') == password
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
@@ -18,17 +28,18 @@ def authenticate():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print(kwargs.get('hostname'))
         auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
+        if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/<hostname>")
 @requires_auth
-def hello():
+def hello(hostname):
     return "Hello World!"
 
 if __name__ == "__main__":
