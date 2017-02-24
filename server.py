@@ -44,7 +44,7 @@ def endpoint(hostname):
 @app.route("/<hostname>/PUT")
 @requires_auth
 def endpoint_put(hostname):
-    ip = request.remote_addr
+    ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     write_ip(hostname, ip)
     return "wrote " + ip
 
