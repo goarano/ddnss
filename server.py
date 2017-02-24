@@ -59,5 +59,5 @@ def write_ip(hostname, ip):
         ip = host_file.write(ip)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0')
 
