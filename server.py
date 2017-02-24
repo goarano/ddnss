@@ -35,7 +35,10 @@ app = Flask(__name__)
 def endpoint(hostname):
     if request.method == 'GET':
         ip = get_ip(hostname)
-        return "read " + ip
+        if ip:
+            return ip
+        else:
+            return "no saved IP"
     elif request.method == 'PUT':
         ip = request.remote_addr
         write_ip(hostname, ip)
@@ -45,15 +48,20 @@ def endpoint(hostname):
 @requires_auth
 def endpoint_put(hostname):
     ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    old_ip = get_ip(hostname)
     write_ip(hostname, ip)
+    if old_ip and old_ip != ip:
+        return "replaced " + old_ip + " with " + ip
     return "wrote " + ip
 
 def get_ip(hostname):
-    with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as host_file:
-        ip = host_file.read()
-    if ip:
+    try:
+        with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as host_file:
+            ip = host_file.read()
         ip = ip.strip()
-    return ip
+        return ip
+    except FileNotFoundError:
+        return None
 
 def write_ip(hostname, ip):
     with open(CONFIG['NSS_PATH']+'/'+hostname, 'w') as host_file:
