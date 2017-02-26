@@ -3,6 +3,7 @@ SUDO:=sudo
 INSTALL:=install
 PATCH:=patch
 RM:=rm
+MKDIR:=mkdir
 
 TARGET_FOLDER:=/lib/x86_64-linux-gnu/
 
@@ -11,6 +12,7 @@ TARGET_FOLDER:=/lib/x86_64-linux-gnu/
 all: install
 
 install: libnss_ddnss.so.2
+	$(MKDIR) -p /var/lib/ddnss/
 	$(SUDO) $(INSTALL) -m 644 $< $(TARGET_FOLDER)
 	$(SUDO) $(PATCH) -N -r - /etc/nsswitch.conf < nsswitch.diff
 

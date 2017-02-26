@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+  ddnss:
+    build: '.'
+    container_name: ddnss
+    restart: always
+    volumes:
+        - /var/lib/ddnss/:/usr/src/app/nss/
+        - /srv/ddnss/config.py:/usr/src/app/config.py:ro
+
