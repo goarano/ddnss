@@ -74,14 +74,9 @@ static enum nss_status get_hostent(
 
     size_t l    = strlen(hn);
 
-    /* We only check .open.ch and .localdomain hostnames */
-    /* This is for safety. */
-    /* FIXME: You are supposed to adapt this to your own environment */
+    /* We only check .ddnss hostnames */
     int ok = 0;
-    if( l > 8 && strcmp(".open.ch", hn+l-8) == 0 ) {
-        ok = 1;
-    }
-    else if( l > 12 && strcmp(".localdomain", hn+l-12) == 0 ) {
+    if( l > 6 && strcmp(".ddnss", hn+l-6) == 0 ) {
         ok = 1;
     }
     if(!ok) {
