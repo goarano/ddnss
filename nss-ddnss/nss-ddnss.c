@@ -29,7 +29,7 @@
 #include <sys/file.h>
 
 
-char* NAME_FOLDER = "/srv/nss/ddnss/";
+char* NAME_FOLDER = "/var/lib/ddnss/";
 size_t NAME_FOLDER_SIZE = 15; /* strlen(NAME_FOLDER) */
 
 

@@ -1,0 +1,13 @@
+diff --git a/etc/nsswitch.conf b/etc/nsswitch.conf
+index 1142be1..5ce41b3 100644
+--- a/etc/nsswitch.conf
++++ b/etc/nsswitch.conf
+@@ -9,7 +9,7 @@ group:          compat
+ shadow:         compat
+ gshadow:        files
+ 
+-hosts:          files dns
++hosts:          files ddnss dns
+ networks:       files
+ 
+ protocols:      db files
