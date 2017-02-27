@@ -56,7 +56,7 @@ def endpoint_put(hostname):
 
 def get_ip(hostname):
     try:
-        with open(CONFIG['NSS_PATH']+'/'+hostname, 'r') as host_file:
+        with open(get_file_path(hostname), 'r') as host_file:
             ip = host_file.read()
         ip = ip.strip()
         return ip
@@ -64,8 +64,11 @@ def get_ip(hostname):
         return None
 
 def write_ip(hostname, ip):
-    with open(CONFIG['NSS_PATH']+'/'+hostname, 'w') as host_file:
+    with open(get_file_path(hostname), 'w') as host_file:
         host_file.write(ip)
+
+def get_file_path(hostname):
+    return CONFIG['NSS_PATH'] + '/' + hostname + '.ddnss'
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
