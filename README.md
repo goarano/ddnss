@@ -16,11 +16,19 @@ Example for docker-compose, see ```docker-compose.yml```
 
 # Examples
 ## Save IP
-```curl -u myuser:mypassword https://ddnss.example.com/myhost -X PUT```
+```
+curl -u myuser:mypassword https://ddnss.example.com/myhost -X PUT
+```
 or
-```curl -u myuser:mypassword https://ddnss.example.com/myhost -X PUT -d "ip=127.0.0.1"```
+```
+curl -u myuser:mypassword https://ddnss.example.com/myhost -X PUT -d "ip=127.0.0.1"
+```
 or
-```curl -u myuser:mypassword https://ddnss.example.com/myhost/set -X POST -F "ip=127.0.0.1"```
+```
+curl -u myuser:mypassword https://ddnss.example.com/myhost/set -X POST -F "ip=127.0.0.1"
+```
 
 ## Get saved IP
-```curl -u myuser:mypassword https://ddnss.example.com/myhost```
+```
+curl -u myuser:mypassword https://ddnss.example.com/myhost
+```
