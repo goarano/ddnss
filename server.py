@@ -1,5 +1,6 @@
 from flask import Flask, request, Response
 from functools import wraps
+from ipaddress import ip_address
 
 from config import AUTH, CONFIG;
 
@@ -63,7 +64,15 @@ def endpoint_put(hostname):
 
 
 def retrieve_ip():
-    ip = request.values.get('ip', request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
+    try:
+        if 'ip' in request.values:
+            ip = request.values['ip'].strip()
+            ip_address(ip)
+            return ip
+    except:
+        pass
+    finally:
+        return request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
 
 
 def get_ip(hostname):
