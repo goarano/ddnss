@@ -46,7 +46,8 @@ def endpoint(hostname):
         else:
             return "no saved IP"
     elif request.method == 'PUT':
-        write_ip(hostname, retrieve_ip())
+        ip = retrieve_ip()
+        write_ip(hostname, ip)
         return "wrote " + ip
 
 
