@@ -66,13 +66,10 @@ def endpoint_put(hostname):
 
 def retrieve_ip():
     try:
-        if 'ip' in request.values:
-            ip = request.values['ip'].strip()
-            ip_address(ip)
-            return ip
+        ip = request.values.get('ip').strip()
+        ip_address(ip) # validate ip address
+        return ip
     except:
-        pass
-    finally:
         return request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
 
 
