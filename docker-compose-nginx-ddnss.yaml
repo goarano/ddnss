@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  nginx-ddnss:
+    build:
+        context: 'https://github.com/goarano/ddnss.git'
+        dockerfile: nginx-ddnss.dockerfile
+    container_name: 'nginx-ddnss'
+    restart: always
+    volumes:
+        - /srv/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+        - /var/lib/ddnss/:/var/lib/ddnss/:ro
+    expose:
+        - 80

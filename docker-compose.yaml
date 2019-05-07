@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+  ddnss:
+    build:
+      context: 'https://github.com/goarano/ddnss.git'
+    container_name: ddnss
+    restart: always
+    volumes:
+        - /srv/ddnss/config.py:/app/config.py:ro
+        - /var/lib/ddnss/:/app/nss/
