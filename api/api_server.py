@@ -73,7 +73,14 @@ def retrieve_ip():
         return request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
 
 
+def sanitize_hostname(hostname):
+    if hostname[-1] == '.':
+        return hostname[0:-1]
+    return hostname
+
+
 def get_ip(hostname):
+    hostname = sanitize_hostname(hostname)
     try:
         with open(get_file_path(hostname), 'r') as host_file:
             ip = host_file.read()
@@ -84,6 +91,7 @@ def get_ip(hostname):
 
 
 def write_ip(hostname, ip):
+    hostname = sanitize_hostname(hostname)
     with open(get_file_path(hostname), 'w') as host_file:
         host_file.write(ip)
 
