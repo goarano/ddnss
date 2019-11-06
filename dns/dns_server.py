@@ -74,7 +74,7 @@ class DdnssResolver(BaseResolver):
         return RR.fromZone(f'{qname} {resp_ttl} {qtype} {ip}')
 
     def ask_api_server(self, qname, qtype):
-        response = requests.get(f'http://{self.api_server}/{qname}', auth=('admin', 'secret'))
+        response = requests.get(f'http://{self.api_server}/{qname}', auth=(self.api_server_username, self.api_server_password))
         if response.ok:
             return response.text
         else:
