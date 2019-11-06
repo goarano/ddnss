@@ -2,7 +2,7 @@ from flask import Flask, request, Response
 from functools import wraps
 from ipaddress import ip_address
 
-from config import AUTH, CONFIG;
+from config import AUTH, CONFIG
 
 
 app = Flask(__name__)
@@ -67,7 +67,7 @@ def endpoint_put(hostname):
 def retrieve_ip():
     try:
         ip = request.values.get('ip').strip()
-        ip_address(ip) # validate ip address
+        ip_address(ip)  # validate ip address
         return ip
     except:
         return request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
@@ -101,5 +101,5 @@ def get_file_path(hostname):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=8080)
 
