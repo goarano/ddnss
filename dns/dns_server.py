@@ -1,11 +1,13 @@
 import os
 import ipaddress
+import logging
 from dnslib.dns import DNSRecord, QTYPE, RR
 from dnslib.server import DNSServer, DNSLogger, BaseResolver, DNSHandler
 import requests
 from datetime import datetime
 
 
+DEBUG = os.environ.get('DEBUG')
 SERVER_PORT = int(os.environ.get('SERVER_PORT', '5353'))
 API_SERVER = os.environ.get('API_SERVER', 'localhost:8080')
 API_SERVER_USERNAME = os.environ['API_SERVER_USERNAME']
@@ -80,6 +82,8 @@ class DdnssResolver(BaseResolver):
 
 
 def main():
+    if DEBUG:
+        logging.basicConfig(level=logging.DEBUG)
     logger = DNSLogger(prefix=False)
     resolver = DdnssResolver(UPSTREAM_ADDRESS, UPSTREAM_PORT, API_SERVER, API_SERVER_USERNAME, API_SERVER_PASSWORD, ["*.ddnss."], TTL)
     server = DNSServer(resolver, port=int(SERVER_PORT), logger=logger, tcp=USE_TCP)
