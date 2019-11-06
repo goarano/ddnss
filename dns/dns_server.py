@@ -1,9 +1,17 @@
+import os
 import ipaddress
-
 from dnslib.dns import DNSRecord, QTYPE, RR
 from dnslib.server import DNSServer, DNSLogger, BaseResolver, DNSHandler
 import requests
 from datetime import datetime
+
+
+SERVER_PORT = int(os.environ.get('SERVER_PORT', '5353'))
+API_SERVER = os.environ.get('API_SERVER', 'localhost:8080')
+UPSTREAM_ADDRESS = os.environ.get('UPSTREAM_ADDRESS', '1.1.1.1')
+UPSTREAM_PORT = int(os.environ.get('UPSTREAM_PORT', '53'))
+TTL = int(os.environ.get('TTL', '300'))
+USE_TCP = bool(int(os.environ.get('USE_TCP', '0')))
 
 KEY_TIME = 'time'
 KEY_VALUE = 'value'
@@ -69,9 +77,9 @@ class DdnssResolver(BaseResolver):
 
 def main():
     logger = DNSLogger(prefix=False)
-    resolver = DdnssResolver("1.1.1.1", 53, "localhost:8080", ["*.ddnss."], 10)
-    server = DNSServer(resolver, port=5353, logger=logger, tcp=False)
-    print(f'running DNS server on 0.0.0.0:5353')
+    resolver = DdnssResolver(UPSTREAM_ADDRESS, UPSTREAM_PORT, API_SERVER, ["*.ddnss."], TTL)
+    server = DNSServer(resolver, port=int(SERVER_PORT), logger=logger, tcp=USE_TCP)
+    print(f'running on 0.0.0.0:{SERVER_PORT}/{USE_TCP and "tcp" or "udp"}')
     server.start()
 
 

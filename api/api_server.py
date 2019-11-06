@@ -125,7 +125,6 @@ def init(app):
     with open(CONFIG_FILE, 'r') as stream:
         cfg = yaml.safe_load(stream)
         return cfg.get('users'), cfg.get('auth')
-    raise Exception(f'{CONFIG_FILE} not found')
 
 
 USERS, AUTH = init(app)
