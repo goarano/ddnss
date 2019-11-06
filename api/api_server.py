@@ -2,20 +2,34 @@ from flask import Flask, request, Response
 from functools import wraps
 from ipaddress import ip_address
 
-from config import AUTH, CONFIG
+from config import AUTH, CONFIG, USERS
 
 app = Flask(__name__)
 
+METHOD_READ = 'read'
+METHOD_WRITE = 'write'
 
-def check_auth(hostname, username, password):
+
+def check_auth(hostname, username, password, method):
     """This function is called to check if a username /
     password combination is valid.
     """
     hostname = sanitize_hostname(hostname)
-    auth = AUTH.get(hostname)
-    if auth == None:
+    domains = hostname.split('.')
+    try:
+        if not USERS[username] == password:
+            return False
+        for i in range(len(domains)):
+            subdomain = '.'.join(domains[i:])
+            cfg = AUTH.get(subdomain)
+            if cfg:
+                if method in ('POST', 'PUT') and username in cfg.get(METHOD_WRITE):
+                    return True
+                if method == 'GET' and username in cfg.get(METHOD_WRITE) or username in cfg.get(METHOD_READ):
+                    return True
         return False
-    return auth.get('username') == username and auth.get('password') == password
+    except KeyError:
+        return False
 
 
 def authenticate():
@@ -30,7 +44,8 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password):
+        method = request.method
+        if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password, method):
             return authenticate()
         return f(*args, **kwargs)
 
