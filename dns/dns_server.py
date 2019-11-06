@@ -70,7 +70,8 @@ class DdnssResolver(BaseResolver):
 def main():
     logger = DNSLogger(prefix=False)
     resolver = DdnssResolver("1.1.1.1", 53, "localhost:8080", ["*.ddnss."], 10)
-    server = DNSServer(resolver, port=8053, address="localhost", logger=logger, tcp=False)
+    server = DNSServer(resolver, port=5353, logger=logger, tcp=False)
+    print(f'running DNS server on 0.0.0.0:5353')
     server.start()
 
 
