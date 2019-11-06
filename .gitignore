@@ -92,5 +92,5 @@ ENV/
 .ropeproject
 
 # custom
-api/config.py
+config.yaml
 nss/*

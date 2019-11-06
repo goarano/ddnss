@@ -1,0 +1,10 @@
+users:
+  admin: 'secret'
+  dns: 'secret'
+
+auth:
+  ddnss:
+    read:
+      - dns
+    write:
+      - admin

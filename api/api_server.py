@@ -1,13 +1,13 @@
 import os
+import yaml
 from flask import Flask, request, Response
 from functools import wraps
 from ipaddress import ip_address
 
-from config import AUTH, USERS
-
 app = Flask(__name__)
 
 NSS_PATH = os.environ.get('NSS_PATH', 'nss')
+CONFIG_FILE = os.environ.get('CONFIG_FILE', 'config.yaml')
 
 METHOD_READ = 'read'
 METHOD_WRITE = 'write'
@@ -17,6 +17,8 @@ def check_auth(hostname, username, password, method):
     """This function is called to check if a username /
     password combination is valid.
     """
+    app.logger.debug(f'{method} {hostname} as {username}')
+    app.logger.debug(f'{USERS} {AUTH}')
     hostname = sanitize_hostname(hostname)
     domains = hostname.split('.')
     try:
@@ -118,6 +120,15 @@ def write_ip(hostname, ip):
 def get_file_path(hostname):
     return f'{NSS_PATH}/{hostname}'
 
+
+def init(app):
+    with open(CONFIG_FILE, 'r') as stream:
+        cfg = yaml.safe_load(stream)
+        return cfg.get('users'), cfg.get('auth')
+    raise Exception(f'{CONFIG_FILE} not found')
+
+
+USERS, AUTH = init(app)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

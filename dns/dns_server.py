@@ -22,25 +22,31 @@ class DdnssResolver(BaseResolver):
         reply = request.reply()
         qname = request.q.qname
         qtype = QTYPE[request.q.qtype]
-        print(f'{qtype} {qname}')
+        # print(f'{qtype} {qname}')
+        matched = False
         for name in self.zones:
-            if qname.matchGlob(name) and (qtype in ('A', 'AAAA', 'ANY', 'CNAME')):
-                answer = self.local_resolve(qname, qtype)
-                if answer:
-                    reply.add_answer(*answer)
+            if qname.matchGlob(name):
+                if qtype in ('A', 'AAAA', 'ANY', 'CNAME'):
+                    answer = self.local_resolve(qname, qtype)
+                    if answer:
+                        reply.add_answer(*answer)
+            matched = True
 
-        if not reply.rr:
+        if not matched:
             use_tcp = handler.protocol != "udp"
             reply = DNSRecord.parse(request.send(self.upstream_address, self.upstream_port, tcp=use_tcp))
         return reply
 
     def local_resolve(self, qname, qtype):
-        print(f'local_resolve({qname},{qtype})')
         now = datetime.utcnow()
         key = (qname, qtype)
         ip = None
-        if key in self.cache and (now - self.cache[key][KEY_TIME]).total_seconds() <= self.ttl:
-            ip = self.cache[key][KEY_VALUE]
+        resp_ttl = self.ttl
+        if key in self.cache:
+            ttl_diff = (now - self.cache[key][KEY_TIME]).total_seconds()
+            if ttl_diff <= self.ttl:
+                ip = self.cache[key][KEY_VALUE]
+                resp_ttl = int(self.ttl - ttl_diff)
         if not ip:
             try:
                 ip = self.ask_api_server(qname, qtype)
@@ -51,12 +57,10 @@ class DdnssResolver(BaseResolver):
                 }
             except ValueError:
                 return None
-        return RR.fromZone(f'{qname} {self.ttl} {qtype} {ip}')
+        return RR.fromZone(f'{qname} {resp_ttl} {qtype} {ip}')
 
     def ask_api_server(self, qname, qtype):
-        print(f'ask_api_server({qname},{qtype})')
         response = requests.get(f'http://{self.api_server}/{qname}', auth=('admin', 'secret'))
-        print(response)
         if response.ok:
             return response.text
         else:
