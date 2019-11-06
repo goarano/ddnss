@@ -16,17 +16,15 @@ class DdnssResolver(BaseResolver):
         self.api_server = api_server
         self.ttl = ttl
         self.cache = {}
-        self.zones = []
-        for z in zones:
-            self.zones.append((z[0], z[1]))
+        self.zones = zones
 
     def resolve(self, request: DNSRecord, handler: DNSHandler):
         reply = request.reply()
         qname = request.q.qname
         qtype = QTYPE[request.q.qtype]
         print(f'{qtype} {qname}')
-        for name, rtype in self.zones:
-            if qname.matchGlob(name) and (qtype in (rtype, 'ANY', 'CNAME')):
+        for name in self.zones:
+            if qname.matchGlob(name) and (qtype in ('A', 'AAAA', 'ANY', 'CNAME')):
                 answer = self.local_resolve(qname, qtype)
                 if answer:
                     reply.add_answer(*answer)
@@ -57,7 +55,7 @@ class DdnssResolver(BaseResolver):
 
     def ask_api_server(self, qname, qtype):
         print(f'ask_api_server({qname},{qtype})')
-        response = requests.get(f'http://{self.api_server}/{qname}')
+        response = requests.get(f'http://{self.api_server}/{qname}', auth=('admin', 'secret'))
         print(response)
         if response.ok:
             return response.text
@@ -67,7 +65,7 @@ class DdnssResolver(BaseResolver):
 
 def main():
     logger = DNSLogger(prefix=False)
-    resolver = DdnssResolver("1.1.1.1", 53, "localhost:8080", [("test.ddnss.", "A")], 10)
+    resolver = DdnssResolver("1.1.1.1", 53, "localhost:8080", ["*.ddnss."], 10)
     server = DNSServer(resolver, port=8053, address="localhost", logger=logger, tcp=False)
     server.start()
 

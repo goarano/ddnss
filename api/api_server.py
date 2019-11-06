@@ -4,7 +4,6 @@ from ipaddress import ip_address
 
 from config import AUTH, CONFIG
 
-
 app = Flask(__name__)
 
 
@@ -12,6 +11,7 @@ def check_auth(hostname, username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
+    hostname = sanitize_hostname(hostname)
     auth = AUTH.get(hostname)
     if auth == None:
         return False
@@ -21,9 +21,9 @@ def check_auth(hostname, username, password):
 def authenticate():
     """Sends a 401 response that enables basic auth"""
     return Response(
-    'Could not verify your access level for that URL.\n'
-    'You have to login with proper credentials', 401,
-    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        'Could not verify your access level for that URL.\n'
+        'You have to login with proper credentials', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 
 def requires_auth(f):
@@ -33,6 +33,7 @@ def requires_auth(f):
         if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password):
             return authenticate()
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -102,4 +103,3 @@ def get_file_path(hostname):
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
-
