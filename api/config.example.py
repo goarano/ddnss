@@ -9,7 +9,3 @@ AUTH = {
         'write': ['admin']
     }
 }
-
-CONFIG = {
-        'NSS_PATH': 'nss/'
-        }

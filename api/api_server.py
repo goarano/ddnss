@@ -1,10 +1,13 @@
+import os
 from flask import Flask, request, Response
 from functools import wraps
 from ipaddress import ip_address
 
-from config import AUTH, CONFIG, USERS
+from config import AUTH, USERS
 
 app = Flask(__name__)
+
+NSS_PATH = os.environ.get('NSS_PATH', 'nss')
 
 METHOD_READ = 'read'
 METHOD_WRITE = 'write'
@@ -113,7 +116,7 @@ def write_ip(hostname, ip):
 
 
 def get_file_path(hostname):
-    return CONFIG['NSS_PATH'] + '/' + hostname + '.ddnss'
+    return f'{NSS_PATH}/{hostname}'
 
 
 if __name__ == "__main__":
