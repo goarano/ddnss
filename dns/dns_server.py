@@ -71,7 +71,8 @@ class DdnssResolver(BaseResolver):
                 }
             except ValueError:
                 return None
-        return RR.fromZone(f'{qname} {resp_ttl} {qtype} {ip}')
+        # return RR.fromZone(f'{qname} {resp_ttl} {qtype} {ip}') # only A records supported at the moment
+        return RR.fromZone(f'{qname} {resp_ttl} A {ip}')
 
     def ask_api_server(self, qname, qtype):
         response = requests.get(f'http://{self.api_server}/{qname}', auth=(self.api_server_username, self.api_server_password))
