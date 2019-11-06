@@ -8,6 +8,8 @@ from datetime import datetime
 
 SERVER_PORT = int(os.environ.get('SERVER_PORT', '5353'))
 API_SERVER = os.environ.get('API_SERVER', 'localhost:8080')
+API_SERVER_USERNAME = os.environ['API_SERVER_USERNAME']
+API_SERVER_PASSWORD = os.environ['API_SERVER_PASSWORD']
 UPSTREAM_ADDRESS = os.environ.get('UPSTREAM_ADDRESS', '1.1.1.1')
 UPSTREAM_PORT = int(os.environ.get('UPSTREAM_PORT', '53'))
 TTL = int(os.environ.get('TTL', '300'))
@@ -18,10 +20,12 @@ KEY_VALUE = 'value'
 
 
 class DdnssResolver(BaseResolver):
-    def __init__(self, upstream_address, upstream_port, api_server, zones, ttl):
+    def __init__(self, upstream_address, upstream_port, api_server, api_server_username, api_server_password, zones, ttl):
         self.upstream_address = upstream_address
         self.upstream_port = upstream_port
         self.api_server = api_server
+        self.api_server_username = api_server_username
+        self.api_server_password = api_server_password
         self.ttl = ttl
         self.cache = {}
         self.zones = zones
@@ -77,7 +81,7 @@ class DdnssResolver(BaseResolver):
 
 def main():
     logger = DNSLogger(prefix=False)
-    resolver = DdnssResolver(UPSTREAM_ADDRESS, UPSTREAM_PORT, API_SERVER, ["*.ddnss."], TTL)
+    resolver = DdnssResolver(UPSTREAM_ADDRESS, UPSTREAM_PORT, API_SERVER, API_SERVER_USERNAME, API_SERVER_PASSWORD, ["*.ddnss."], TTL)
     server = DNSServer(resolver, port=int(SERVER_PORT), logger=logger, tcp=USE_TCP)
     print(f'running on 0.0.0.0:{SERVER_PORT}/{USE_TCP and "tcp" or "udp"}')
     server.start()
