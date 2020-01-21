@@ -30,7 +30,7 @@ def check_auth(hostname, username, password, method):
             if cfg:
                 if method in ('POST', 'PUT') and username in cfg.get(METHOD_WRITE):
                     return True
-                if method == 'GET' and username in cfg.get(METHOD_WRITE) or username in cfg.get(METHOD_READ):
+                if method == 'GET' and (username in cfg.get(METHOD_WRITE) or username in cfg.get(METHOD_READ)):
                     return True
         return False
     except KeyError:
