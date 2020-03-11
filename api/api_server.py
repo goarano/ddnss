@@ -1,6 +1,7 @@
 import os
 import yaml
 import secrets
+from ipaddress import ip_address
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -8,8 +9,6 @@ from fastapi.logger import logger
 
 from starlette.requests import Request
 
-from functools import wraps
-from ipaddress import ip_address
 
 app = FastAPI()
 security = HTTPBasic()
@@ -32,11 +31,7 @@ def check_auth(hostname, username, password, method):
     domains = hostname.split('.')
     try:
         if not secrets.compare_digest(USERS[username], password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Basic"},
-            )
+            unauthorized()
         for i in range(len(domains)):
             subdomain = '.'.join(domains[i:])
             cfg = AUTH.get(subdomain)
@@ -45,35 +40,27 @@ def check_auth(hostname, username, password, method):
                     return True
                 if method == 'GET' and (username in cfg.get(METHOD_WRITE) or username in cfg.get(METHOD_READ)):
                     return True
-        return False
+        unauthorized()
     except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+        unauthorized()
 
 
-def ensure_auth(hostname: str, request: Request, credentials: HTTPBasicCredentials):
+def unauthorized():
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password",
+        headers={"WWW-Authenticate": "Basic"},
+    )
+
+
+def requires_auth(hostname: str, request: Request, credentials: HTTPBasicCredentials = Depends(security)):
     method = request.method
     check_auth(hostname, credentials.username, credentials.password, method)
 
 
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, request: Request, credentials: HTTPBasicCredentials = Depends(security), **kwargs):
-        method = request.method
-        check_auth(kwargs.get('hostname'), credentials.username, credentials.password, method)
-        return f(*args, **kwargs)
-
-    return decorated
-
-
-@app.get("/{hostname}")
-@app.put("/{hostname}")
-#@requires_auth
-def endpoint(hostname, request: Request, credentials: HTTPBasicCredentials = Depends(security)):
-    ensure_auth(hostname, request, credentials)
+@app.get("/{hostname}", dependencies=[Depends(requires_auth)])
+@app.put("/{hostname}", dependencies=[Depends(requires_auth)])
+def endpoint(hostname, request: Request):
     if request.method == 'GET':
         ip = get_ip(hostname)
         if ip:
@@ -86,10 +73,9 @@ def endpoint(hostname, request: Request, credentials: HTTPBasicCredentials = Dep
         return "wrote " + ip
 
 
-# legacy support
-@app.route("/{hostname}/PUT")
-@app.route("/{hostname}/set", methods=['GET', 'POST', 'PUT'])
-@requires_auth
+@app.get("/{hostname}/set", dependencies=[Depends(requires_auth)])
+@app.post("/{hostname}/set", dependencies=[Depends(requires_auth)])
+@app.put("/{hostname}/set", dependencies=[Depends(requires_auth)])
 def endpoint_put(hostname, request: Request):
     ip = retrieve_ip(request)
     old_ip = get_ip(hostname)
