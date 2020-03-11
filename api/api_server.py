@@ -1,10 +1,19 @@
 import os
 import yaml
-from flask import Flask, request, Response
+import secrets
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.logger import logger
+
+from starlette.requests import Request
+
 from functools import wraps
 from ipaddress import ip_address
 
-app = Flask(__name__)
+app = FastAPI()
+security = HTTPBasic()
+
 
 NSS_PATH = os.environ.get('NSS_PATH', 'nss')
 CONFIG_FILE = os.environ.get('CONFIG_FILE', 'config.yaml')
@@ -17,13 +26,17 @@ def check_auth(hostname, username, password, method):
     """This function is called to check if a username /
     password combination is valid.
     """
-    app.logger.debug(f'{method} {hostname} as {username}')
-    app.logger.debug(f'{USERS} {AUTH}')
+    logger.debug(f'{method} {hostname} as {username}')
+    logger.debug(f'{USERS} {AUTH}')
     hostname = sanitize_hostname(hostname)
     domains = hostname.split('.')
     try:
-        if not USERS[username] == password:
-            return False
+        if not secrets.compare_digest(USERS[username], password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Basic"},
+            )
         for i in range(len(domains)):
             subdomain = '.'.join(domains[i:])
             cfg = AUTH.get(subdomain)
@@ -34,32 +47,33 @@ def check_auth(hostname, username, password, method):
                     return True
         return False
     except KeyError:
-        return False
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 
-def authenticate():
-    """Sends a 401 response that enables basic auth"""
-    return Response(
-        'Could not verify your access level for that URL.\n'
-        'You have to login with proper credentials', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'})
+def ensure_auth(hostname: str, request: Request, credentials: HTTPBasicCredentials):
+    method = request.method
+    check_auth(hostname, credentials.username, credentials.password, method)
 
 
 def requires_auth(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
+    def decorated(*args, request: Request, credentials: HTTPBasicCredentials = Depends(security), **kwargs):
         method = request.method
-        if not auth or not check_auth(kwargs.get('hostname'), auth.username, auth.password, method):
-            return authenticate()
+        check_auth(kwargs.get('hostname'), credentials.username, credentials.password, method)
         return f(*args, **kwargs)
 
     return decorated
 
 
-@app.route("/<hostname>", methods=['GET', 'PUT'])
-@requires_auth
-def endpoint(hostname):
+@app.get("/{hostname}")
+@app.put("/{hostname}")
+#@requires_auth
+def endpoint(hostname, request: Request, credentials: HTTPBasicCredentials = Depends(security)):
+    ensure_auth(hostname, request, credentials)
     if request.method == 'GET':
         ip = get_ip(hostname)
         if ip:
@@ -67,17 +81,17 @@ def endpoint(hostname):
         else:
             return "no saved IP"
     elif request.method == 'PUT':
-        ip = retrieve_ip()
+        ip = retrieve_ip(request)
         write_ip(hostname, ip)
         return "wrote " + ip
 
 
 # legacy support
-@app.route("/<hostname>/PUT")
-@app.route("/<hostname>/set", methods=['GET', 'POST', 'PUT'])
+@app.route("/{hostname}/PUT")
+@app.route("/{hostname}/set", methods=['GET', 'POST', 'PUT'])
 @requires_auth
-def endpoint_put(hostname):
-    ip = retrieve_ip()
+def endpoint_put(hostname, request: Request):
+    ip = retrieve_ip(request)
     old_ip = get_ip(hostname)
     write_ip(hostname, ip)
     if old_ip and old_ip != ip:
@@ -85,13 +99,13 @@ def endpoint_put(hostname):
     return "wrote " + ip
 
 
-def retrieve_ip():
+def retrieve_ip(request):
     try:
-        ip = request.values.get('ip').strip()
+        ip = request.client.host
         ip_address(ip)  # validate ip address
         return ip
     except:
-        return request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+        return request.headers.get('HTTP_X_REAL_IP')
 
 
 def sanitize_hostname(hostname):
@@ -128,6 +142,3 @@ def init(app):
 
 
 USERS, AUTH = init(app)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080)

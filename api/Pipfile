@@ -9,9 +9,12 @@ pytest = "*"
 [packages]
 Flask = "*"
 pyyaml = "*"
+uvicorn = "*"
+fastapi = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
 tests = "pytest tests.py"
+start = "uvicorn api_server:app --reload"
