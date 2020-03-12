@@ -9,6 +9,8 @@ from fastapi.logger import logger
 
 from starlette.requests import Request
 
+from pydantic import BaseModel
+
 
 app = FastAPI()
 security = HTTPBasic()
@@ -19,6 +21,14 @@ CONFIG_FILE = os.environ.get('CONFIG_FILE', 'config.yaml')
 
 METHOD_READ = 'read'
 METHOD_WRITE = 'write'
+
+
+class ReadIpResponse(BaseModel):
+    ip: str
+
+
+class WriteIpResponse(ReadIpResponse):
+    old_ip: str = None
 
 
 def check_auth(hostname, username, password, method):
@@ -59,38 +69,47 @@ def requires_auth(hostname: str, request: Request, credentials: HTTPBasicCredent
 
 
 @app.get("/{hostname}", dependencies=[Depends(requires_auth)])
+def get_hostname_ip(hostname, request: Request):
+    return get_hostname_ip_helper(hostname)
+
+
 @app.put("/{hostname}", dependencies=[Depends(requires_auth)])
-def endpoint(hostname, request: Request):
-    if request.method == 'GET':
-        ip = get_ip(hostname)
-        if ip:
-            return ip
-        else:
-            return "no saved IP"
-    elif request.method == 'PUT':
-        ip = retrieve_ip(request)
-        write_ip(hostname, ip)
-        return "wrote " + ip
+@app.post("/{hostname}", dependencies=[Depends(requires_auth)])
+def set_hostname_ip(hostname, request: Request):
+    return set_hostname_ip_helper(hostname, request)
 
 
 @app.get("/{hostname}/set", dependencies=[Depends(requires_auth)])
 @app.post("/{hostname}/set", dependencies=[Depends(requires_auth)])
 @app.put("/{hostname}/set", dependencies=[Depends(requires_auth)])
-def endpoint_put(hostname, request: Request):
-    ip = retrieve_ip(request)
+def set_hostname_ip_compat(hostname, request: Request):
+    return set_hostname_ip_helper(hostname, request)
+
+
+def get_hostname_ip_helper(hostname):
+    ip = get_ip(hostname)
+    if ip:
+        return ReadIpResponse(ip=ip)
+    raise HTTPException(status_code=404, detail="No IP saved")
+
+
+def set_hostname_ip_helper(hostname, request):
+    ip = ip_from_request(request)
     old_ip = get_ip(hostname)
-    write_ip(hostname, ip)
-    if old_ip and old_ip != ip:
-        return "replaced " + old_ip + " with " + ip
-    return "wrote " + ip
+    if old_ip != ip:
+        write_ip(hostname, ip)
+    return WriteIpResponse(ip=ip, old_ip=old_ip)
 
 
-def retrieve_ip(request):
+def ip_from_request(request):
     if 'HTTP_X_REAL_IP' in request.headers:
         ip = request.headers.get('HTTP_X_REAL_IP')
     else:
         ip = request.client.host
-    ip_address(ip)  # validate ip address
+    try:
+        ip_address(ip)  # validate ip address
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid IP {ip}")
     return ip
 
 
