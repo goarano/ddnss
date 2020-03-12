@@ -86,12 +86,12 @@ def endpoint_put(hostname, request: Request):
 
 
 def retrieve_ip(request):
-    try:
+    if 'HTTP_X_REAL_IP' in request.headers:
+        ip = request.headers.get('HTTP_X_REAL_IP')
+    else:
         ip = request.client.host
-        ip_address(ip)  # validate ip address
-        return ip
-    except:
-        return request.headers.get('HTTP_X_REAL_IP')
+    ip_address(ip)  # validate ip address
+    return ip
 
 
 def sanitize_hostname(hostname):
