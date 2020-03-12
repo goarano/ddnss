@@ -1,7 +1,12 @@
-FROM python:3.6-alpine
+FROM python:alpine as requirements
 WORKDIR /app
+RUN pip install pipfile-requirements
+COPY Pipfile* ./
+RUN pipfile2req > requirements.txt
 
-ADD requirements.txt ./
+FROM python:3.7-alpine
+WORKDIR /app
+COPY --from=requirements /app/requirements.txt ./
 RUN pip install -r requirements.txt
 ADD dns_server.py ./
 
