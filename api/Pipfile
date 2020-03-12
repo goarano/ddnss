@@ -10,6 +10,7 @@ pytest = "*"
 pyyaml = "*"
 uvicorn = "*"
 fastapi = "*"
+python-multipart = "*"
 
 [requires]
 python_version = "3.7"

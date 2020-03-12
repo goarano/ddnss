@@ -3,7 +3,7 @@ import yaml
 import secrets
 from ipaddress import ip_address
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Form
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.logger import logger
 
@@ -74,16 +74,24 @@ def get_hostname_ip(hostname, request: Request):
 
 
 @app.put("/{hostname}", dependencies=[Depends(requires_auth)])
-@app.post("/{hostname}", dependencies=[Depends(requires_auth)])
 def set_hostname_ip(hostname, request: Request):
     return set_hostname_ip_helper(hostname, request)
 
 
+@app.post("/{hostname}", dependencies=[Depends(requires_auth)])
+def set_hostname_ip_post(hostname, request: Request, ip: str = Form(None)):
+    return set_hostname_ip_helper(hostname, request, set_ip=ip)
+
+
 @app.get("/{hostname}/set", dependencies=[Depends(requires_auth)])
-@app.post("/{hostname}/set", dependencies=[Depends(requires_auth)])
 @app.put("/{hostname}/set", dependencies=[Depends(requires_auth)])
 def set_hostname_ip_compat(hostname, request: Request):
     return set_hostname_ip_helper(hostname, request)
+
+
+@app.post("/{hostname}/set", dependencies=[Depends(requires_auth)])
+def set_hostname_ip_compat_post(hostname, request: Request, ip: str = Form(None)):
+    return set_hostname_ip_helper(hostname, request, set_ip=ip)
 
 
 def get_hostname_ip_helper(hostname):
@@ -93,8 +101,16 @@ def get_hostname_ip_helper(hostname):
     raise HTTPException(status_code=404, detail="No IP saved")
 
 
-def set_hostname_ip_helper(hostname, request):
-    ip = ip_from_request(request)
+def set_hostname_ip_helper(hostname, request, set_ip=None):
+    if set_ip:
+        ip = set_ip
+    else:
+        ip = ip_from_request(request)
+    try:
+        ip_address(ip)  # validate ip address
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"Invalid IP {ip}")
+
     old_ip = get_ip(hostname)
     if old_ip != ip:
         write_ip(hostname, ip)
@@ -103,14 +119,8 @@ def set_hostname_ip_helper(hostname, request):
 
 def ip_from_request(request):
     if 'HTTP_X_REAL_IP' in request.headers:
-        ip = request.headers.get('HTTP_X_REAL_IP')
-    else:
-        ip = request.client.host
-    try:
-        ip_address(ip)  # validate ip address
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=f"Invalid IP {ip}")
-    return ip
+        return request.headers.get('HTTP_X_REAL_IP')
+    return request.client.host
 
 
 def sanitize_hostname(hostname):
