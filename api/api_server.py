@@ -9,7 +9,7 @@ from fastapi.logger import logger
 
 from starlette.requests import Request
 
-from pydantic import BaseModel
+from fastapi_camelcase import CamelModel
 
 
 app = FastAPI()
@@ -23,7 +23,7 @@ METHOD_READ = 'read'
 METHOD_WRITE = 'write'
 
 
-class ReadIpResponse(BaseModel):
+class ReadIpResponse(CamelModel):
     ip: str
 
 

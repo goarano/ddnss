@@ -11,6 +11,7 @@ pyyaml = "*"
 uvicorn = "*"
 fastapi = "*"
 python-multipart = "*"
+fastapi-camelcase = "*"
 
 [requires]
 python_version = "3.7"
