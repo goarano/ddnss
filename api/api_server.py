@@ -74,10 +74,6 @@ def get_hostname_ip(hostname):
 
 
 @app.put("/{hostname}", dependencies=[Depends(requires_auth)])
-def set_hostname_ip(hostname, request: Request, x_forwarded_for: str = Header(None)):
-    return set_hostname_ip_helper(hostname, request, x_forwarded_for)
-
-
 @app.post("/{hostname}", dependencies=[Depends(requires_auth)])
 def set_hostname_ip_post(hostname, request: Request, ip: str = Form(None), x_forwarded_for: str = Header(None)):
     return set_hostname_ip_helper(hostname, request, x_forwarded_for, set_ip=ip)
