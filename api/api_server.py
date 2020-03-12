@@ -3,7 +3,7 @@ import yaml
 import secrets
 from ipaddress import ip_address
 
-from fastapi import Depends, FastAPI, HTTPException, status, Form
+from fastapi import Depends, FastAPI, HTTPException, status, Form, Header
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.logger import logger
 
@@ -69,29 +69,29 @@ def requires_auth(hostname: str, request: Request, credentials: HTTPBasicCredent
 
 
 @app.get("/{hostname}", dependencies=[Depends(requires_auth)])
-def get_hostname_ip(hostname, request: Request):
+def get_hostname_ip(hostname):
     return get_hostname_ip_helper(hostname)
 
 
 @app.put("/{hostname}", dependencies=[Depends(requires_auth)])
-def set_hostname_ip(hostname, request: Request):
-    return set_hostname_ip_helper(hostname, request)
+def set_hostname_ip(hostname, request: Request, x_forwarded_for: str = Header(None)):
+    return set_hostname_ip_helper(hostname, request, x_forwarded_for)
 
 
 @app.post("/{hostname}", dependencies=[Depends(requires_auth)])
-def set_hostname_ip_post(hostname, request: Request, ip: str = Form(None)):
-    return set_hostname_ip_helper(hostname, request, set_ip=ip)
+def set_hostname_ip_post(hostname, request: Request, ip: str = Form(None), x_forwarded_for: str = Header(None)):
+    return set_hostname_ip_helper(hostname, request, x_forwarded_for, set_ip=ip)
 
 
 @app.get("/{hostname}/set", dependencies=[Depends(requires_auth)])
 @app.put("/{hostname}/set", dependencies=[Depends(requires_auth)])
-def set_hostname_ip_compat(hostname, request: Request):
-    return set_hostname_ip_helper(hostname, request)
+def set_hostname_ip_compat(hostname, request: Request, x_forwarded_for: str = Header(None)):
+    return set_hostname_ip_helper(hostname, request, x_forwarded_for)
 
 
 @app.post("/{hostname}/set", dependencies=[Depends(requires_auth)])
-def set_hostname_ip_compat_post(hostname, request: Request, ip: str = Form(None)):
-    return set_hostname_ip_helper(hostname, request, set_ip=ip)
+def set_hostname_ip_compat_post(hostname, request: Request, ip: str = Form(None), x_forwarded_for: str = Header(None)):
+    return set_hostname_ip_helper(hostname, request, x_forwarded_for, set_ip=ip)
 
 
 def get_hostname_ip_helper(hostname):
@@ -101,11 +101,12 @@ def get_hostname_ip_helper(hostname):
     raise HTTPException(status_code=404, detail="No IP saved")
 
 
-def set_hostname_ip_helper(hostname, request, set_ip=None):
+def set_hostname_ip_helper(hostname, request, x_forwarded_for, set_ip=None):
+    ip = x_forwarded_for
     if set_ip:
         ip = set_ip
     else:
-        ip = ip_from_request(request)
+        ip = ip_from_request(request, x_forwarded_for)
     try:
         ip_address(ip)  # validate ip address
     except ValueError:
@@ -117,9 +118,9 @@ def set_hostname_ip_helper(hostname, request, set_ip=None):
     return WriteIpResponse(ip=ip, old_ip=old_ip)
 
 
-def ip_from_request(request):
-    if 'HTTP_X_REAL_IP' in request.headers:
-        return request.headers.get('HTTP_X_REAL_IP')
+def ip_from_request(request, x_forwarded_for):
+    if x_forwarded_for:
+        return x_forwarded_for
     return request.client.host
 
 
