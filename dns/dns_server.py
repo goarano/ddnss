@@ -102,7 +102,7 @@ class DdnssResolver(BaseResolver):
     def ask_api_server(self, qname, qtype):
         response = requests.get(f'http://{self.api_server}/{qname}', auth=(self.api_server_username, self.api_server_password))
         if response.ok:
-            return response.text
+            return str(response.json().get('ip'))
         else:
             return None
 
